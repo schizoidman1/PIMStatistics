@@ -13,6 +13,7 @@ export default function FileUploader({ onLoaded }) {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
+      worker: true, // usa Web Worker para evitar travamentos na UI
       complete: (results) => {
         const parsed = results.data
           .filter(row => row.USER && (row["START DATE"] || row["START TIMESTAMP"]) && (row["END DATE"] || row["END TIMESTAMP"]) && row.DURATION)
@@ -30,11 +31,15 @@ export default function FileUploader({ onLoaded }) {
         console.log("CSV carregado:", parsed);
 
         setRawData(parsed);
-        const filtered = filterByDate(parsed, dateRange.start, dateRange.end);
-        const stats = calcStats(filtered);
-        setFilteredData(filtered);
-        setStats(stats);
-        onLoaded();
+
+        // processa estatísticas e filtros em defer para evitar travamentos
+        setTimeout(() => {
+          const filtered = filterByDate(parsed, dateRange.start, dateRange.end);
+          const stats = calcStats(filtered);
+          setFilteredData(filtered);
+          setStats(stats);
+          onLoaded();
+        }, 0);
       }
     });
   };
