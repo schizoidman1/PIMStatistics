@@ -1,50 +1,46 @@
 import dayjs from 'dayjs';
 
+function parseDate(row, key1, keyFallback) {
+  return dayjs(row[key1] || row[keyFallback]);
+}
+
 export function filterByDate(data, start, end) {
   const startDate = dayjs(start);
   const endDate = dayjs(end);
 
   return data.filter(row => {
-    const login = dayjs(row.LOGIN_START);
+    const login = parseDate(row, 'LOGIN_START', 'START DATE');
     return login.isValid() && login.isAfter(startDate.subtract(1, 'day')) && login.isBefore(endDate.add(1, 'day'));
   });
 }
 
-export async function calcStatsChunked(data, chunkSize = 1000) {
-  const loginsByMinute = {};
-  const MAX_MINUTES_PER_SESSION = 7200;
+export async function calcStatsChunked(data) {
+  const events = [];
 
-  const chunks = [];
-  for (let i = 0; i < data.length; i += chunkSize) {
-    chunks.push(data.slice(i, i + chunkSize));
+  for (const row of data) {
+    const start = parseDate(row, 'LOGIN_START', 'START DATE');
+    const end = parseDate(row, 'LOGIN_END', 'END DATE');
+
+    if (!start.isValid() || !end.isValid() || start.isAfter(end)) continue;
+
+    events.push({ time: start.unix(), delta: 1 });
+    events.push({ time: end.unix(), delta: -1 });
   }
 
-  for (const chunk of chunks) {
-    await new Promise(resolve => setTimeout(() => {
-      chunk.forEach(row => {
-        if (!row.LOGIN_START || !row.LOGIN_END) return;
+  events.sort((a, b) => a.time - b.time);
 
-        const start = dayjs(row.LOGIN_START);
-        const end = dayjs(row.LOGIN_END);
+  let active = 0;
+  let worst = 0;
+  let sum = 0;
+  let count = 0;
 
-        if (!start.isValid() || !end.isValid() || start.isAfter(end)) return;
-
-        let current = start;
-        let steps = 0;
-        while (current.isBefore(end) && steps < MAX_MINUTES_PER_SESSION) {
-          const key = current.format('YYYY-MM-DD HH:mm');
-          if (!loginsByMinute[key]) loginsByMinute[key] = 0;
-          loginsByMinute[key] += 1;
-          current = current.add(1, 'minute');
-          steps++;
-        }
-      });
-      resolve();
-    }, 0));
+  for (const e of events) {
+    active += e.delta;
+    worst = Math.max(worst, active);
+    sum += active;
+    count++;
   }
 
-  const allCounts = Object.values(loginsByMinute);
-  const worstCase = allCounts.length ? Math.max(...allCounts) : 0;
-  const averageCase = allCounts.length ? Math.round(allCounts.reduce((a, b) => a + b, 0) / allCounts.length) : 0;
-  return { worstCase, averageCase };
+  const average = count ? Math.round(sum / count) : 0;
+  return { worstCase: worst, averageCase: average };
 }

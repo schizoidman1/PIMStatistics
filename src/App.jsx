@@ -3,7 +3,7 @@ import { DataProvider, useData } from './context/DataContext';
 import FileUploader from './FileUploader';
 import LoadingScreen from './LoadingScreen';
 import Dashboard from './Dashboard';
-import { filterByDate, calcStats } from './utils/calcUtils';
+import { filterByDate, calcStatsChunked } from './utils/calcUtils';
 import ThemeToggle from './ThemeToggle';
 
 function InnerApp() {
@@ -16,7 +16,7 @@ function InnerApp() {
     setDateRange(updated);
     if (rawData.length > 0) {
       const filtered = filterByDate(rawData, updated.start, updated.end);
-      const stats = calcStats(filtered);
+      const stats = calcStatsChunked(filtered);
       setFilteredData(filtered);
       setStats(stats);
     }

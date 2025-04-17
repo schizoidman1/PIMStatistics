@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import DateFilter from './DateFilter';
 import TopUsersChart from './TopUsersChart';
 import LoginVolumeChart from './LoginVolumeChart';
@@ -8,32 +8,52 @@ import HeatmapChart from './HeatmapChart';
 import { useData } from './context/DataContext';
 import { filterByDate, calcStatsChunked } from './utils/calcUtils';
 import { motion } from 'framer-motion';
+import debounce from 'lodash.debounce';
 
-export default function Dashboard({ data, dateRange, onDateChange, stats }) {
-  const { rawData, setFilteredData, setStats } = useData();
+export default function Dashboard({ dateRange, onDateChange, stats }) {
+  const { rawData, setFilteredData, setStats, filteredData } = useData();
   const [loadingStats, setLoadingStats] = useState(false);
+  const [volumeInfo, setVolumeInfo] = useState('');
 
-  useEffect(() => {
-    if (rawData.length && dateRange.start && dateRange.end) {
-      const filtered = filterByDate(rawData, dateRange.start, dateRange.end);
+  const processData = useCallback(
+    debounce((data, start, end) => {
+      const startTime = performance.now();
+      const filtered = filterByDate(data, start, end);
       setFilteredData(filtered);
       setLoadingStats(true);
+      setVolumeInfo(`Visualizando ${filtered.length.toLocaleString()} de ${data.length.toLocaleString()} registros.`);
+
       calcStatsChunked(filtered).then((stats) => {
         setStats(stats);
         setLoadingStats(false);
+        const endTime = performance.now();
+        console.log(`⏱️ Processamento levou ${(endTime - startTime).toFixed(2)} ms`);
+        localStorage.setItem('lastRange', JSON.stringify({ start, end }));
+        localStorage.setItem('lastVolume', filtered.length);
       });
+    }, 300),
+    []
+  );
+
+  useEffect(() => {
+    if (rawData.length && dateRange.start && dateRange.end) {
+      processData(rawData, dateRange.start, dateRange.end);
     }
-  }, [rawData, dateRange]);
+  }, [rawData, dateRange, processData]);
 
   return (
-    <div className="p-8 text-white min-h-screen bg-gradient-to-br from-[#0d0d0d] via-[#1a1a1a] to-[#000000]">
-      <h1 className="text-4xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-fuchsia-500">PIMStatistics Dashboard</h1>
+    <div className="p-8 min-h-screen text-black dark:text-white bg-white dark:bg-gradient-to-br dark:from-[#0d0d0d] dark:via-[#1a1a1a] dark:to-[#000000] transition-colors duration-300">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-fuchsia-500">PIMStatistics Dashboard</h1>
+        <ThemeToggle />
+      </div>
 
       <div className="mb-6">
         <DateFilter startDate={dateRange.start} endDate={dateRange.end} onChange={onDateChange} data={rawData} />
+        {volumeInfo && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-gray-400 mt-1">{volumeInfo}</motion.p>}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-[#1f2937] p-6 rounded-lg shadow-md relative">
           <h2 className="text-lg mb-2">🔥 Pior caso de logins simultâneos</h2>
           {loadingStats ? (
@@ -62,20 +82,20 @@ export default function Dashboard({ data, dateRange, onDateChange, stats }) {
             </p>
           )}
         </div>
-      </div>
+      </motion.div>
 
-      <div className="mb-10">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-10">
         <TokenRecommendation peak={stats.worstCase} />
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <TopUsersChart data={data} />
-        <LoginVolumeChart data={data} />
-      </div>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <TopUsersChart data={filteredData} />
+        <LoginVolumeChart data={filteredData} />
+      </motion.div>
 
-      <div className='mt-10'>
-        <HeatmapChart data={data}/>
-      </div>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='mt-10'>
+        <HeatmapChart data={filteredData}/>
+      </motion.div>
     </div>
   );
 }
