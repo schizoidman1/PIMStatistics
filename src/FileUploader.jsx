@@ -1,10 +1,9 @@
 import React from 'react';
 import Papa from 'papaparse';
 import { useData } from './context/DataContext';
-import { filterByDate, calcStats } from './utils/calcUtils';
 
 export default function FileUploader({ onLoaded }) {
-  const { setRawData, setFilteredData, setStats, dateRange } = useData();
+  const { setRawData } = useData();
 
   const handleFile = (e) => {
     const file = e.target.files[0];
@@ -31,15 +30,7 @@ export default function FileUploader({ onLoaded }) {
         console.log("CSV carregado:", parsed);
 
         setRawData(parsed);
-
-        // processa estatísticas e filtros em defer para evitar travamentos
-        setTimeout(() => {
-          const filtered = filterByDate(parsed, dateRange.start, dateRange.end);
-          const stats = calcStats(filtered);
-          setFilteredData(filtered);
-          setStats(stats);
-          onLoaded();
-        }, 0);
+        onLoaded();
       }
     });
   };
