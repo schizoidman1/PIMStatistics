@@ -1,56 +1,44 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import dayjs from 'dayjs';
 
 export default function DateFilter({ startDate, endDate, onChange, data }) {
-  const [mesesUnicos, setMesesUnicos] = useState([]);
-
-  useEffect(() => {
-    if (!data || data.length === 0) return;
-
-    const meses = new Set();
-    data.forEach(row => {
-      const d = dayjs(row.LOGIN_START);
-      if (d.isValid()) {
-        const key = d.format('YYYY-MM');
-        meses.add(key);
-      }
-    });
-
-    const listaOrdenada = Array.from(meses).sort();
-    setMesesUnicos(listaOrdenada);
-
-    if (!startDate && listaOrdenada.length > 0) {
-      const inicial = listaOrdenada[0];
-      const inicio = dayjs(inicial + '-01').format('YYYY-MM-DD');
-      const fim = dayjs(inicial + '-01').endOf('month').format('YYYY-MM-DD');
-      onChange('start', inicio);
-      onChange('end', fim);
-    }
+  const [minDate, maxDate] = useMemo(() => {
+    if (!data || data.length === 0) return ['', ''];
+    const sorted = [...data].sort((a, b) => new Date(a.LOGIN_START) - new Date(b.LOGIN_START));
+    return [
+      dayjs(sorted[0].LOGIN_START).format('YYYY-MM-DD'),
+      dayjs(sorted[sorted.length - 1].LOGIN_START).format('YYYY-MM-DD')
+    ];
   }, [data]);
 
-  const handleMesChange = (e) => {
-    const [ano, mes] = e.target.value.split('-');
-    const inicio = dayjs(`${ano}-${mes}-01`).format('YYYY-MM-DD');
-    const fim = dayjs(`${ano}-${mes}-01`).endOf('month').format('YYYY-MM-DD');
-    onChange('start', inicio);
-    onChange('end', fim);
-  };
+  useEffect(() => {
+    if (minDate && !startDate) onChange('start', minDate);
+    if (maxDate && !endDate) onChange('end', maxDate);
+  }, [minDate, maxDate, startDate, endDate, onChange]);
 
   return (
-    <div className="flex gap-4 mb-4">
-      <div>
-        <label className="block text-black dark:text-white">Selecione o mês:</label>
-        <select
-          onChange={handleMesChange}
-          value={startDate ? dayjs(startDate).format('YYYY-MM') : ''}
+    <div className="flex flex-col md:flex-row gap-4 mb-4">
+      <div className="flex flex-col">
+        <label className="block text-black dark:text-white mb-1">Data Início:</label>
+        <input
+          type="date"
+          value={startDate || ''}
+          onChange={(e) => onChange('start', e.target.value)}
+          min={minDate}
+          max={maxDate}
           className="bg-gray-100 dark:bg-gray-800 text-black dark:text-white p-2 rounded transition-colors duration-300"
-        >
-          {mesesUnicos.map(m => (
-            <option key={m} value={m}>
-              {dayjs(m + '-01').format('MMMM [de] YYYY')}
-            </option>
-          ))}
-        </select>
+        />
+      </div>
+      <div className="flex flex-col">
+        <label className="block text-black dark:text-white mb-1">Data Fim:</label>
+        <input
+          type="date"
+          value={endDate || ''}
+          onChange={(e) => onChange('end', e.target.value)}
+          min={minDate}
+          max={maxDate}
+          className="bg-gray-100 dark:bg-gray-800 text-black dark:text-white p-2 rounded transition-colors duration-300"
+        />
       </div>
     </div>
   );

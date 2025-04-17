@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import DateFilter from './DateFilter';
 import TopUsersChart from './TopUsersChart';
 import LoginVolumeChart from './LoginVolumeChart';
@@ -6,17 +6,22 @@ import TokenRecommendation from './TokenRecommendation';
 import ThemeToggle from './ThemeToggle';
 import HeatmapChart from './HeatmapChart';
 import { useData } from './context/DataContext';
-import { filterByDate, calcStats } from './utils/calcUtils';
+import { filterByDate, calcStatsChunked } from './utils/calcUtils';
+import { motion } from 'framer-motion';
 
 export default function Dashboard({ data, dateRange, onDateChange, stats }) {
   const { rawData, setFilteredData, setStats } = useData();
+  const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
     if (rawData.length && dateRange.start && dateRange.end) {
       const filtered = filterByDate(rawData, dateRange.start, dateRange.end);
-      const stats = calcStats(filtered);
       setFilteredData(filtered);
-      setStats(stats);
+      setLoadingStats(true);
+      calcStatsChunked(filtered).then((stats) => {
+        setStats(stats);
+        setLoadingStats(false);
+      });
     }
   }, [rawData, dateRange]);
 
@@ -29,17 +34,33 @@ export default function Dashboard({ data, dateRange, onDateChange, stats }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-[#1f2937] p-6 rounded-lg shadow-md">
+        <div className="bg-[#1f2937] p-6 rounded-lg shadow-md relative">
           <h2 className="text-lg mb-2">🔥 Pior caso de logins simultâneos</h2>
-          <p className="text-4xl font-bold text-pink-400">
-            {isFinite(stats.worstCase) ? stats.worstCase : '—'}
-          </p>
+          {loadingStats ? (
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+              className="w-6 h-6 border-4 border-t-transparent border-pink-400 rounded-full mx-auto"
+            />
+          ) : (
+            <p className="text-4xl font-bold text-pink-400">
+              {isFinite(stats.worstCase) ? stats.worstCase : '—'}
+            </p>
+          )}
         </div>
-        <div className="bg-[#1f2937] p-6 rounded-lg shadow-md">
+        <div className="bg-[#1f2937] p-6 rounded-lg shadow-md relative">
           <h2 className="text-lg mb-2">📈 Caso médio de logins simultâneos</h2>
-          <p className="text-4xl font-bold text-green-400">
-            {isFinite(stats.averageCase) ? stats.averageCase : '—'}
-          </p>
+          {loadingStats ? (
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+              className="w-6 h-6 border-4 border-t-transparent border-green-400 rounded-full mx-auto"
+            />
+          ) : (
+            <p className="text-4xl font-bold text-green-400">
+              {isFinite(stats.averageCase) ? stats.averageCase : '—'}
+            </p>
+          )}
         </div>
       </div>
 

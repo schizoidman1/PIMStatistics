@@ -3,31 +3,45 @@ import dayjs from 'dayjs';
 export function filterByDate(data, start, end) {
   const startDate = dayjs(start);
   const endDate = dayjs(end);
+
   return data.filter(row => {
     const login = dayjs(row.LOGIN_START);
     return login.isValid() && login.isAfter(startDate.subtract(1, 'day')) && login.isBefore(endDate.add(1, 'day'));
   });
 }
 
-export function calcStats(data) {
+export async function calcStatsChunked(data, chunkSize = 1000) {
   const loginsByMinute = {};
+  const MAX_MINUTES_PER_SESSION = 7200;
 
-  data.forEach(row => {
-    if (!row.LOGIN_START || !row.LOGIN_END) return;
+  const chunks = [];
+  for (let i = 0; i < data.length; i += chunkSize) {
+    chunks.push(data.slice(i, i + chunkSize));
+  }
 
-    const start = dayjs(row.LOGIN_START);
-    const end = dayjs(row.LOGIN_END);
+  for (const chunk of chunks) {
+    await new Promise(resolve => setTimeout(() => {
+      chunk.forEach(row => {
+        if (!row.LOGIN_START || !row.LOGIN_END) return;
 
-    if (!start.isValid() || !end.isValid() || start.isAfter(end)) return;
+        const start = dayjs(row.LOGIN_START);
+        const end = dayjs(row.LOGIN_END);
 
-    let current = start;
-    while (current.isBefore(end)) {
-      const key = current.format('YYYY-MM-DD HH:mm');
-      if (!loginsByMinute[key]) loginsByMinute[key] = 0;
-      loginsByMinute[key] += 1;
-      current = current.add(1, 'minute');
-    }
-  });
+        if (!start.isValid() || !end.isValid() || start.isAfter(end)) return;
+
+        let current = start;
+        let steps = 0;
+        while (current.isBefore(end) && steps < MAX_MINUTES_PER_SESSION) {
+          const key = current.format('YYYY-MM-DD HH:mm');
+          if (!loginsByMinute[key]) loginsByMinute[key] = 0;
+          loginsByMinute[key] += 1;
+          current = current.add(1, 'minute');
+          steps++;
+        }
+      });
+      resolve();
+    }, 0));
+  }
 
   const allCounts = Object.values(loginsByMinute);
   const worstCase = allCounts.length ? Math.max(...allCounts) : 0;
