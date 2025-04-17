@@ -14,11 +14,23 @@ export default function FileUploader({ onLoaded }) {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
-        setRawData(results.data);
+        const parsed = results.data
+          .filter(row => row.USER && (row["START DATE"] || row["START TIMESTAMP"]) && (row["END DATE"] || row["END TIMESTAMP"]) && row.DURATION)
+          .map(row => {
+            const loginStart = row["START DATE"] ? new Date(row["START DATE"]) : new Date(Number(row["START TIMESTAMP"]) * 1000);
+            const loginEnd = row["END DATE"] ? new Date(row["END DATE"]) : new Date(Number(row["END TIMESTAMP"]) * 1000);
+            return {
+              USER: row.USER,
+              LOGIN_START: loginStart,
+              LOGIN_END: loginEnd,
+              DURATION: parseInt(row.DURATION)
+            };
+          });
 
-        console.log("CSV carregado:", results.data);
-        
-        const filtered = filterByDate(results.data, dateRange.start, dateRange.end);
+        console.log("CSV carregado:", parsed);
+
+        setRawData(parsed);
+        const filtered = filterByDate(parsed, dateRange.start, dateRange.end);
         const stats = calcStats(filtered);
         setFilteredData(filtered);
         setStats(stats);
