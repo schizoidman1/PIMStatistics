@@ -10,6 +10,11 @@ export default function HomePage({ onLoaded }) {
       {/* Cabeçalho */}
       <Header />
 
+      <div className="flex z-50 justify-between items-center mb-6">
+        <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-orange-700 to-fuchsia-500">PIMStatistics Dashboard</h1>
+        <ThemeToggle />
+      </div>
+
       {/* Conteúdo */}
       <main className="max-w-4xl mx-auto py-12 px-6 flex-grow">
         <h2 className="text-3xl font-semibold mb-4">Análise de Logins do Sistema PIMS</h2>
