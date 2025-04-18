@@ -12,7 +12,6 @@ export default function HomePage({ onLoaded }) {
       <Header />
 
       <div className="flex z-50 justify-between items-center mb-6">
-        <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-orange-700 to-fuchsia-500">PIMStatistics Dashboard</h1>
         <ThemeToggle />
       </div>
 
