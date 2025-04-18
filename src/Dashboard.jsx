@@ -5,12 +5,13 @@ import LoginVolumeChart from './LoginVolumeChart';
 import TokenRecommendation from './TokenRecommendation';
 import ThemeToggle from './ThemeToggle';
 import HeatmapChart from './HeatmapChart';
+import Footer from './Footer';
 import { useData } from './context/DataContext';
 import { filterByDate, calcStatsChunked } from './utils/calcUtils';
 import { motion } from 'framer-motion';
 import debounce from 'lodash.debounce';
 
-export default function Dashboard({ dateRange, onDateChange, stats }) {
+export default function Dashboard({ data, dateRange, onDateChange, stats, onBackToHome }) {
   const { rawData, setFilteredData, setStats, filteredData } = useData();
   const [loadingStats, setLoadingStats] = useState(false);
   const [volumeInfo, setVolumeInfo] = useState('');
@@ -44,8 +45,16 @@ export default function Dashboard({ dateRange, onDateChange, stats }) {
   return (
     <div className="p-8 min-h-screen text-black dark:text-white bg-white dark:bg-gradient-to-br dark:from-[#0d0d0d] dark:via-[#1a1a1a] dark:to-[#000000] transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-fuchsia-500">PIMStatistics Dashboard</h1>
+        <h1 className="text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-orange-700 to-fuchsia-500">PIMStatistics Dashboard</h1>
         <ThemeToggle />
+      </div>
+
+      <div className="flex justify-between items-center mb-6">
+      <button
+          onClick={onBackToHome}
+          className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded shadow">
+          ← Importar outro arquivo
+        </button>
       </div>
 
       <div className="mb-6">
@@ -54,7 +63,7 @@ export default function Dashboard({ dateRange, onDateChange, stats }) {
       </div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="bg-[#1f2937] p-6 rounded-lg shadow-md relative">
+        <div className="bg-gray-100 dark:bg-[#1f2937] p-6 rounded-lg shadow-md relative">
           <h2 className="text-lg mb-2">🔥 Pior caso de logins simultâneos</h2>
           {loadingStats ? (
             <motion.div
@@ -68,7 +77,7 @@ export default function Dashboard({ dateRange, onDateChange, stats }) {
             </p>
           )}
         </div>
-        <div className="bg-[#1f2937] p-6 rounded-lg shadow-md relative">
+        <div className="bg-gray-100 dark:bg-[#1f2937] p-6 rounded-lg shadow-md relative">
           <h2 className="text-lg mb-2">📈 Caso médio de logins simultâneos</h2>
           {loadingStats ? (
             <motion.div
@@ -96,6 +105,8 @@ export default function Dashboard({ dateRange, onDateChange, stats }) {
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='mt-10'>
         <HeatmapChart data={filteredData}/>
       </motion.div>
+
+      <Footer />
     </div>
   );
 }

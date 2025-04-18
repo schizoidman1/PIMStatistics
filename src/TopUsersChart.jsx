@@ -19,7 +19,7 @@ export default function TopUsersChart({ data }) {
     .slice(0, 10);
 
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const barColor = prefersDark ? '#38bdf8' : '#0ea5e9';
+  const barColor = prefersDark ? '#ff6a00' : '#0ea5e9';
 
   return (
     <div className="bg-gray-200 dark:bg-gray-800 p-4 rounded-lg relative transition-colors duration-300">

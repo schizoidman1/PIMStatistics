@@ -5,6 +5,7 @@ import LoadingScreen from './LoadingScreen';
 import Dashboard from './Dashboard';
 import { filterByDate, calcStatsChunked } from './utils/calcUtils';
 import ThemeToggle from './ThemeToggle';
+import HomePage from './HomePage';
 
 function InnerApp() {
   const { rawData, setFilteredData, dateRange, setDateRange, setStats, filteredData, stats } = useData();
@@ -25,9 +26,15 @@ function InnerApp() {
   return (
     <>
       {!loaded ? (
-        loading ? <LoadingScreen /> : <FileUploader onLoaded={() => { setLoading(true); setTimeout(() => { setLoading(false); setLoaded(true); }, 2000); }} />
+        loading ? <LoadingScreen /> : <HomePage onLoaded={() => { setLoading(true); setTimeout(() => { setLoading(false); setLoaded(true); }, 2000); }} />
       ) : (
-        <Dashboard data={filteredData} dateRange={dateRange} onDateChange={handleDateChange} stats={stats} />
+        <Dashboard 
+          data={filteredData} 
+          dateRange={dateRange} 
+          onDateChange={handleDateChange} 
+          stats={stats}
+          onBackToHome={() => setLoaded(false)}
+        />
       )}
     </>
   );
