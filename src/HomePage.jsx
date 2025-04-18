@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Footer from './Footer';
 import FileUploader from './FileUploader';
 import Header from './Header';
+import ThemeToggle from './ThemeToggle';
 
 export default function HomePage({ onLoaded }) {
   return (
