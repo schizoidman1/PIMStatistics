@@ -37,6 +37,14 @@ function agruparPorDiaDoMes(data, anoSelecionado) {
   return { heatmap, colunas: dias };
 }
 
+// Blocos reduzidos e escala de cor tipo GitHub
+function getColorLevel(value, max) {
+  if (!max || value === 0) return 'rgba(255,106,0,0.10)';
+  const steps = [0.15, 0.35, 0.55, 0.75, 1];
+  const idx = Math.floor((value / max) * steps.length);
+  return `rgba(255,106,0,${steps[idx]})`;
+}
+
 function agruparPorHoraDoDia(data, mesSelecionado, anoSelecionado) {
   const mapa = new Map();
   for (const row of data) {
@@ -92,44 +100,55 @@ export default function HeatmapChart({ data }) {
       : agruparPorHoraDoDia(data, mesSelecionado, anoSelecionado);
   }, [data, modo, mesSelecionado, anoSelecionado]);
 
+
+  // Pegue o máximo do grid pra normalizar cor
+  const maxVal = useMemo(() => {
+    let max = 0;
+    for (const linha of heatmap) {
+      for (const col of colunas) {
+        max = Math.max(max, linha[col] || 0);
+      }
+    }
+    return max;
+  }, [heatmap, colunas]);
+
+
   return (
-    <div className="bg-gray-200 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto transition-colors duration-300">
-      <div className="flex flex-wrap gap-4 justify-between items-center mb-4">
-        <h2 className={`text-lg text-black dark:text-white`}>🗓️ Heatmap - {modo === 'diaMes' ? 'Dias do Mês' : 'Horas do Dia'}</h2>
-        <div className="flex gap-2 items-center">
-          <select value={modo} onChange={(e) => setModo(e.target.value)} className="bg-white dark:bg-gray-700 text-black dark:text-white border px-2 py-1 rounded">
+    <div className="bg-gray-200 dark:bg-gray-800 p-2 rounded-lg overflow-x-auto transition-colors duration-300">
+      <div className="flex flex-wrap gap-2 justify-between items-center mb-2">
+        <h2 className="text-base font-bold text-black dark:text-white">🗓️ Heatmap de Logins</h2>
+        <div className="flex gap-1 items-center">
+          <select value={modo} onChange={(e) => setModo(e.target.value)} className="bg-white dark:bg-gray-700 text-xs border px-1 py-0.5 rounded">
             <option value="diaMes">Dias do Mês</option>
             <option value="horaDia">Horas do Dia</option>
           </select>
           {modo === 'horaDia' && (
-            <select value={mesSelecionado} onChange={(e) => setMesSelecionado(e.target.value)} className="bg-white dark:bg-gray-700 text-black dark:text-white border px-2 py-1 rounded">
+            <select value={mesSelecionado} onChange={e => setMesSelecionado(e.target.value)} className="bg-white dark:bg-gray-700 text-xs border px-1 py-0.5 rounded">
               {meses.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
           )}
-          <select value={anoSelecionado} onChange={(e) => setAnoSelecionado(e.target.value)} className="bg-white dark:bg-gray-700 text-black dark:text-white border px-2 py-1 rounded">
+          <select value={anoSelecionado} onChange={e => setAnoSelecionado(e.target.value)} className="bg-white dark:bg-gray-700 text-xs border px-1 py-0.5 rounded">
             {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
         </div>
       </div>
 
       {heatmap.length > 0 && (
-        <div className="inline-grid" style={{ gridTemplateColumns: `80px repeat(${colunas.length}, 32px)` }}>
+        <div className="inline-grid" style={{ gridTemplateColumns: `48px repeat(${colunas.length}, 14px)` }}>
           <div></div>
           {colunas.map(c => (
-            <div key={c} className={`text-xs text-center text-black dark:text-white`}>{c}</div>
+            <div key={c} className="text-[10px] text-center text-black dark:text-white">{c}</div>
           ))}
-
           {heatmap.map((linha, i) => (
             <React.Fragment key={i}>
-              <div className={`text-xs text-black dark:text-white`}>{linha.label}</div>
+              <div className="text-[10px] text-black dark:text-white">{linha.label}</div>
               {colunas.map((col, j) => (
                 <div
                   key={j}
-                  className="w-8 h-8 rounded-sm"
-                  title={`Logins: ${linha[col]}`}
+                  className="w-3 h-3 rounded-sm transition"
+                  title={`${linha.label} ${col}: ${linha[col] || 0} login${(linha[col]||0) !== 1 ? 's' : ''}`}
                   style={{
-                    backgroundColor: `rgba(${baseColor}, ${Math.min((linha[col] || 0) / 100, 1)})`,
-                    border: `1px solid ${borderColor}`
+                    backgroundColor: getColorLevel(linha[col] || 0, maxVal),
                   }}
                 />
               ))}

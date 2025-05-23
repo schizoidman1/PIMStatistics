@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import DateFilter from './DateFilter';
 import TopUsersChart from './TopUsersChart';
 import LoginVolumeChart from './LoginVolumeChart';
-import TokenRecommendation from './TokenRecommendation';
+import LoginHistogram from './LoginHistogram';
 import ThemeToggle from './ThemeToggle';
 import HeatmapChart from './HeatmapChart';
 import Footer from './Footer';
@@ -64,7 +64,7 @@ export default function Dashboard({ data, dateRange, onDateChange, stats, onBack
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div className="bg-gray-100 dark:bg-[#1f2937] p-6 rounded-lg shadow-md relative">
-          <h2 className="text-lg mb-2">🔥 Pior caso de logins simultâneos</h2>
+          <h2 className="text-lg mb-2">🔥 Pior caso de <b>tokens</b> simultâneos</h2>
           {loadingStats ? (
             <motion.div
               animate={{ rotate: 360 }}
@@ -73,12 +73,12 @@ export default function Dashboard({ data, dateRange, onDateChange, stats, onBack
             />
           ) : (
             <p className="text-4xl font-bold text-pink-400">
-              {isFinite(stats.worstCase) ? stats.worstCase : '—'}
+              {isFinite(stats.worstCase) ? Math.ceil(stats.worstCase / 3) : '—'}
             </p>
           )}
         </div>
         <div className="bg-gray-100 dark:bg-[#1f2937] p-6 rounded-lg shadow-md relative">
-          <h2 className="text-lg mb-2">📈 Caso médio de logins simultâneos</h2>
+          <h2 className="text-lg mb-2">📈 Caso médio de <b>tokens</b> simultâneos</h2>
           {loadingStats ? (
             <motion.div
               animate={{ rotate: 360 }}
@@ -87,14 +87,14 @@ export default function Dashboard({ data, dateRange, onDateChange, stats, onBack
             />
           ) : (
             <p className="text-4xl font-bold text-green-400">
-              {isFinite(stats.averageCase) ? stats.averageCase : '—'}
+              {isFinite(stats.averageCase) ? Math.ceil(stats.averageCase / 3) : '—'}
             </p>
           )}
         </div>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-10">
-        <TokenRecommendation peak={stats.worstCase} />
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='mt-10'>
+        <LoginHistogram data={filteredData}/>
       </motion.div>
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 gap-8">
