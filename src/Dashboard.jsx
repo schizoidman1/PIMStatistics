@@ -5,6 +5,7 @@ import LoginVolumeChart from './LoginVolumeChart';
 import LoginHistogram from './LoginHistogram';
 import ThemeToggle from './ThemeToggle';
 import HeatmapChart from './HeatmapChart';
+import TokenPeakExtract from './TokenPeakExtract';
 import Footer from './Footer';
 import { useData } from './context/DataContext';
 import { filterByDate, calcStatsChunked } from './utils/calcUtils';
@@ -104,6 +105,10 @@ export default function Dashboard({ data, dateRange, onDateChange, stats, onBack
 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='mt-10'>
         <HeatmapChart data={filteredData}/>
+      </motion.div>
+
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className='mt-10'>
+        <TokenPeakExtract data={filteredData} />
       </motion.div>
 
       <Footer />

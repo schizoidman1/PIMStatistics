@@ -59,7 +59,7 @@ export default function LoginHistogram({ data }) {
           Faixa:
           <select value={binSize} onChange={e => setBinSize(Number(e.target.value))}
             className="bg-white dark:bg-gray-700 text-black dark:text-white rounded px-2 py-1 ml-1 border">
-            {[2, 5, 10, 20].map(size => (
+            {[1, 2, 5, 10, 20].map(size => (
               <option value={size} key={size}>{size}</option>
             ))}
           </select>
