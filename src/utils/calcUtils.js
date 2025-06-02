@@ -82,67 +82,54 @@ export function getConcurrencyHistogram(data, binSize = 2, usersPerToken = 3) {
 }
 
 
-
-// Adaptado para considerar tokens, cada token = 3 usuários
-export function extractTokenPeakPeriods(data, tokensThreshold, usuariosPorToken = 3) {
-  // Monta lista de eventos (login e logout)
+export function extractTokenOccurrences(data, tokensThreshold, usuariosPorToken = 3) {
   const events = [];
-  data.forEach(row => {
+
+  // Pré-processamento rápido e simplificado
+  for (const row of data) {
     const start = dayjs(row.LOGIN_START || row['START DATE']);
     const end = dayjs(row.LOGIN_END || row['END DATE']);
-    const user = row.USER || row['USER'];
-    if (!start.isValid() || !end.isValid() || start.isAfter(end)) return;
-    events.push({ time: start.unix(), delta: 1, user });
-    events.push({ time: end.unix(), delta: -1, user });
-  });
-  // Ordena eventos pelo tempo
+
+    if (!start.isValid() || !end.isValid() || start.isAfter(end)) continue;
+
+    const sessionId = `${row.USER || row['USER']}__${row.PRODUCT || row['PRODUCT'] || 'UNKNOWN_PRODUCT'}__${row.SERVER || row['SERVER'] || 'UNKNOWN_SERVER'}`;
+
+    events.push({ time: start.unix(), delta: 1, sessionId });
+    events.push({ time: end.unix(), delta: -1, sessionId });
+  }
+
   events.sort((a, b) => a.time - b.time);
 
-  let activeUsers = new Set();
+  const activeSessions = new Set();
+  const occurrences = [];
+
+  let lastTokens = -1; // Evita checar o mesmo valor múltiplas vezes
   let activeCount = 0;
-  let periods = [];
-  let inPeak = false;
-  let periodStart = null;
 
   for (const e of events) {
-    if (e.delta > 0) activeUsers.add(e.user);
-    else activeUsers.delete(e.user);
+    if (e.delta > 0) activeSessions.add(e.sessionId);
+    else activeSessions.delete(e.sessionId);
 
     activeCount += e.delta;
-    const currentTokens = Math.ceil(activeCount / usuariosPorToken);
 
-    if (!inPeak && currentTokens >= tokensThreshold) {
-      // Início do período de pico
-      inPeak = true;
-      periodStart = e.time;
-    }
-    if (inPeak && currentTokens < tokensThreshold) {
-      // Fim do período de pico
-      inPeak = false;
-      periods.push({
-        start: periodStart,
-        end: e.time,
-        users: Array.from(activeUsers),
-        tokensUsed: currentTokens,
-        usersCount: activeCount,
-      });
+    // Otimização matemática: cálculo só muda quando cruzar múltiplos
+    const currentTokens = ((activeCount + usuariosPorToken - 1) / usuariosPorToken) | 0; 
+
+    // Só verifica quando o número de tokens mudou
+    if (currentTokens !== lastTokens) {
+      if (currentTokens === tokensThreshold) {
+        occurrences.push({
+          time: e.time,
+          date: dayjs.unix(e.time).format('DD/MM/YYYY HH:mm:ss'),
+          tokensUsed: currentTokens,
+          usersCount: activeCount,
+          sessions: [...activeSessions],
+        });
+      }
+      lastTokens = currentTokens;
     }
   }
-  // Se terminou com pico ainda aberto
-  if (inPeak && periodStart) {
-    periods.push({
-      start: periodStart,
-      end: events[events.length - 1].time,
-      users: Array.from(activeUsers),
-      tokensUsed: Math.ceil(activeCount / usuariosPorToken),
-      usersCount: activeCount,
-    });
-  }
-  // Converte timestamps para data legível
-  return periods.map(p => ({
-    ...p,
-    start: dayjs.unix(p.start).format('DD/MM/YYYY HH:mm:ss'),
-    end: dayjs.unix(p.end).format('DD/MM/YYYY HH:mm:ss'),
-    durationSec: p.end - p.start,
-  }));
+
+  return occurrences;
 }
+

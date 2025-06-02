@@ -23,7 +23,9 @@ export default function FileUploader({ onLoaded }) {
               USER: row.USER,
               LOGIN_START: loginStart,
               LOGIN_END: loginEnd,
-              DURATION: parseInt(row.DURATION)
+              DURATION: parseInt(row.DURATION),
+              PRODUCT: row.PRODUCT,
+              SERVER: row.SERVER
             };
           });
 
